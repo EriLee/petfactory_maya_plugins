@@ -2,7 +2,7 @@ import sys, math
 from maya import OpenMaya, OpenMayaMPx
 
 # The name of the node.
-kPluginNodeName = 'petSine' 
+kPluginNodeName = 'petPiston' 
 # Where this node will be found in the Maya UI.
 
 kPluginNodeClassify = 'utility/general'
@@ -11,17 +11,20 @@ kPluginNodeClassify = 'utility/general'
 # Plugs for internal use only can use 0 - 0x7ffff.
 # Plugs that AD ships in th edev kit uses 0x80000 - 0xfffff
 # if you plan to distribute the plug, get an ID from AD  
-kPluginNodeId = OpenMaya.MTypeId(0x0) 
+kPluginNodeId = OpenMaya.MTypeId(0x00001) 
 
 ##########################################################
 # Plug-in 
 ##########################################################
 class myNode(OpenMayaMPx.MPxNode):
     # Static variables which will later be replaced by the node's attributes.
-    input_value = OpenMaya.MObject()
-    frequency = OpenMaya.MObject()
-    scale = OpenMaya.MObject()
-    out_sine = OpenMaya.MObject()
+    radius = OpenMaya.MObject()
+    rod_offset = OpenMaya.MObject()
+    angle = OpenMaya.MObject()
+
+    arc_x = OpenMaya.MObject()
+    arc_y = OpenMaya.MObject()
+    rod_x = OpenMaya.MObject()
     
     def __init__(self):
         ''' Constructor. '''
@@ -35,29 +38,42 @@ class myNode(OpenMayaMPx.MPxNode):
             - data: Contains the data on which we will base our computations.
         '''
         
-        if(plug == myNode.out_sine):
+        if(plug == myNode.arc_x or plug == myNode.arc_y or plug == myNode.rod_x):
             
             # Obtain the data handles for each attribute
-            input_data = data.inputValue(myNode.input_value)
-            scale_data = data.inputValue(myNode.scale)
-            frequency_data = data.inputValue(myNode.frequency)
-            out_data = data.outputValue(myNode.out_sine)
+            radius_data = data.inputValue(myNode.radius)
+            rod_offset_data = data.inputValue(myNode.rod_offset)
+            angle_data = data.inputValue(myNode.angle)
+
+            out_arc_x = data.outputValue(myNode.arc_x)
+            out_arc_y = data.outputValue(myNode.arc_y)
+            out_rod_x = data.outputValue(myNode.rod_x)
             
             # Extract the actual value associated to our sample input attribute (we have defined it as a float)
-            input_val = input_data.asFloat()
-            scale_val = scale_data.asFloat()
-            frequency_val = frequency_data.asFloat()
+            radius_val = radius_data.asFloat()
+            rod_offset_val = rod_offset_data.asFloat()
+            angle_val = angle_data.asFloat()
 
             # perform the desired computation
-            #angle = 6.2831853 * (input_val/frequency_val)
-            angle = (6.2831853 / frequency_val) * input_val
-            sin_result = math.sin(angle) * scale_val
-            
+            ux = math.cos(angle_val)
+            uy = math.sin(angle_val)
+
+            arc_x = ux * radius_val
+            arc_y = uy * radius_val
+
+            rod_length = radius_val*2 + rod_offset_val
+
+            rod_x = radius_val * ux + math.sqrt(rod_length*rod_length - radius_val*radius_val * uy*uy)
+
             # Set the output value.
-            out_data.setFloat(sin_result)
+            out_arc_x.setFloat(arc_x)
+            out_arc_y.setFloat(arc_y)
+            out_rod_x.setFloat(rod_x)
             
             # Mark the output data handle as being clean; it need not be computed given its input.
-            out_data.setClean()
+            out_arc_x.setClean()
+            out_arc_y.setClean()
+            out_rod_x.setClean()
              
         else:
             return OpenMaya.kUnknownParameter
@@ -82,45 +98,64 @@ def nodeInitializer():
     #==================================
 
     # input_value
-    myNode.input_value = nAttr.create('input', 'in', kFloat, 0.0)
+    myNode.radius = nAttr.create('radius', 'r', kFloat, 10.0)
     nAttr.setWritable(True)
     nAttr.setStorable(True) 
     nAttr.setHidden(False)
-    myNode.addAttribute(myNode.input_value)
+    myNode.addAttribute(myNode.radius)
 
     # frequency
-    myNode.frequency = nAttr.create('frequency', 'fr', kFloat, 48.0)
+    myNode.rod_offset = nAttr.create('rodOffset', 'ro', kFloat, 2.0)
     nAttr.setWritable(True)
     nAttr.setStorable(True) 
     nAttr.setHidden(False)
-    nAttr.setMin(0.0001) 
-    myNode.addAttribute(myNode.frequency)
+    myNode.addAttribute(myNode.rod_offset)
 
     # scale
-    myNode.scale = nAttr.create('scale', 'sc', kFloat, 10.0)
+    myNode.angle = nAttr.create('angle', 'a', kFloat, 0.0)
     nAttr.setWritable(True)
     nAttr.setStorable(True) 
     nAttr.setHidden(False)
-    myNode.addAttribute(myNode.scale)
+    myNode.addAttribute(myNode.angle)
     
     #==================================
     # OUTPUT NODE ATTRIBUTE(S)
     #==================================
-    myNode.out_sine = nAttr.create('outSine', 'o', kFloat)
+    myNode.arc_x = nAttr.create('arcx', 'ax', kFloat)
     nAttr.setStorable(False)
     nAttr.setWritable(False)
     nAttr.setReadable(True)
     nAttr.setHidden(False)
-    myNode.addAttribute(myNode.out_sine)
+    myNode.addAttribute(myNode.arc_x)
+
+    myNode.arc_y = nAttr.create('arcy', 'ay', kFloat)
+    nAttr.setStorable(False)
+    nAttr.setWritable(False)
+    nAttr.setReadable(True)
+    nAttr.setHidden(False)
+    myNode.addAttribute(myNode.arc_y)
+
+    myNode.rod_x = nAttr.create('rodx', 'rx', kFloat)
+    nAttr.setStorable(False)
+    nAttr.setWritable(False)
+    nAttr.setReadable(True)
+    nAttr.setHidden(False)
+    myNode.addAttribute(myNode.rod_x)
     
     #==================================
     # NODE ATTRIBUTE DEPENDENCIES
     #==================================
     # If sampleInAttribute changes, the sampleOutAttribute data must be recomputed.
-    myNode.attributeAffects(myNode.input_value, myNode.out_sine)
-    myNode.attributeAffects(myNode.frequency, myNode.out_sine)
-    myNode.attributeAffects(myNode.scale, myNode.out_sine)
-    
+    myNode.attributeAffects(myNode.radius, myNode.arc_x)
+    myNode.attributeAffects(myNode.radius, myNode.arc_y)
+    myNode.attributeAffects(myNode.radius, myNode.rod_x)
+
+    myNode.attributeAffects(myNode.angle, myNode.arc_x)
+    myNode.attributeAffects(myNode.angle, myNode.arc_y)
+    myNode.attributeAffects(myNode.angle, myNode.rod_x)
+
+    myNode.attributeAffects(myNode.rod_offset, myNode.rod_x)
+
     
 def initializePlugin( mobject ):
     ''' Initialize the plug-in '''
