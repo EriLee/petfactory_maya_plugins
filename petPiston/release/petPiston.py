@@ -25,6 +25,7 @@ class myNode(OpenMayaMPx.MPxNode):
     arc_x = OpenMaya.MObject()
     arc_y = OpenMaya.MObject()
     rod_x = OpenMaya.MObject()
+    orient = OpenMaya.MObject()
     
     def __init__(self):
         ''' Constructor. '''
@@ -38,9 +39,10 @@ class myNode(OpenMayaMPx.MPxNode):
             - data: Contains the data on which we will base our computations.
         '''
         
-        if(plug == myNode.arc_x or plug == myNode.arc_y or plug == myNode.rod_x):
+        if(plug == myNode.arc_x or plug == myNode.arc_y or plug == myNode.rod_x or plug == myNode.orient):
             
             # Obtain the data handles for each attribute
+
             radius_data = data.inputValue(myNode.radius)
             rod_offset_data = data.inputValue(myNode.rod_offset)
             angle_data = data.inputValue(myNode.angle)
@@ -48,13 +50,18 @@ class myNode(OpenMayaMPx.MPxNode):
             out_arc_x = data.outputValue(myNode.arc_x)
             out_arc_y = data.outputValue(myNode.arc_y)
             out_rod_x = data.outputValue(myNode.rod_x)
+            out_orient = data.outputValue(myNode.orient)
             
             # Extract the actual value associated to our sample input attribute (we have defined it as a float)
+
             radius_val = radius_data.asFloat()
             rod_offset_val = rod_offset_data.asFloat()
-            angle_val = angle_data.asFloat()
+            #angle_val = (3.1415926/180) * angle_data.asFloat()
+            angle_val = 0.017453292 * angle_data.asFloat()
+            
 
-            # perform the desired computation
+            # COMPUTE #############################
+
             ux = math.cos(angle_val)
             uy = math.sin(angle_val)
 
@@ -65,15 +72,20 @@ class myNode(OpenMayaMPx.MPxNode):
 
             rod_x = radius_val * ux + math.sqrt(rod_length*rod_length - radius_val*radius_val * uy*uy)
 
+            #orient = (180/3.1415926) * math.atan(arc_y/(arc_x - rod_x))
+            orient = 57.295779513 * math.atan(arc_y/(arc_x - rod_x))
+
             # Set the output value.
             out_arc_x.setFloat(arc_x)
             out_arc_y.setFloat(arc_y)
             out_rod_x.setFloat(rod_x)
+            out_orient.setFloat(orient)
             
             # Mark the output data handle as being clean; it need not be computed given its input.
             out_arc_x.setClean()
             out_arc_y.setClean()
             out_rod_x.setClean()
+            out_orient.setClean()
              
         else:
             return OpenMaya.kUnknownParameter
@@ -97,21 +109,21 @@ def nodeInitializer():
     # INPUT NODE ATTRIBUTE(S)
     #==================================
 
-    # input_value
+    # radius
     myNode.radius = nAttr.create('radius', 'r', kFloat, 10.0)
     nAttr.setWritable(True)
     nAttr.setStorable(True) 
     nAttr.setHidden(False)
     myNode.addAttribute(myNode.radius)
 
-    # frequency
+    # rod offset
     myNode.rod_offset = nAttr.create('rodOffset', 'ro', kFloat, 2.0)
     nAttr.setWritable(True)
     nAttr.setStorable(True) 
     nAttr.setHidden(False)
     myNode.addAttribute(myNode.rod_offset)
 
-    # scale
+    # angle
     myNode.angle = nAttr.create('angle', 'a', kFloat, 0.0)
     nAttr.setWritable(True)
     nAttr.setStorable(True) 
@@ -121,6 +133,7 @@ def nodeInitializer():
     #==================================
     # OUTPUT NODE ATTRIBUTE(S)
     #==================================
+
     myNode.arc_x = nAttr.create('arcx', 'ax', kFloat)
     nAttr.setStorable(False)
     nAttr.setWritable(False)
@@ -141,6 +154,13 @@ def nodeInitializer():
     nAttr.setReadable(True)
     nAttr.setHidden(False)
     myNode.addAttribute(myNode.rod_x)
+
+    myNode.orient = nAttr.create('orient', 'o', kFloat)
+    nAttr.setStorable(False)
+    nAttr.setWritable(False)
+    nAttr.setReadable(True)
+    nAttr.setHidden(False)
+    myNode.addAttribute(myNode.orient)
     
     #==================================
     # NODE ATTRIBUTE DEPENDENCIES
@@ -149,12 +169,15 @@ def nodeInitializer():
     myNode.attributeAffects(myNode.radius, myNode.arc_x)
     myNode.attributeAffects(myNode.radius, myNode.arc_y)
     myNode.attributeAffects(myNode.radius, myNode.rod_x)
+    myNode.attributeAffects(myNode.radius, myNode.orient)
 
     myNode.attributeAffects(myNode.angle, myNode.arc_x)
     myNode.attributeAffects(myNode.angle, myNode.arc_y)
     myNode.attributeAffects(myNode.angle, myNode.rod_x)
+    myNode.attributeAffects(myNode.angle, myNode.orient)
 
     myNode.attributeAffects(myNode.rod_offset, myNode.rod_x)
+    myNode.attributeAffects(myNode.rod_offset, myNode.orient)
 
     
 def initializePlugin( mobject ):
