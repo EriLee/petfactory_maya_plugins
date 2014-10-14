@@ -11,7 +11,7 @@ kPluginNodeClassify = 'utility/general'
 # Plugs for internal use only can use 0 - 0x7ffff.
 # Plugs that AD ships in th edev kit uses 0x80000 - 0xfffff
 # if you plan to distribute the plug, get an ID from AD  
-kPluginNodeId = OpenMaya.MTypeId(0x00001) 
+kPluginNodeId = OpenMaya.MTypeId(0x00002) 
 
 ##########################################################
 # Plug-in 
