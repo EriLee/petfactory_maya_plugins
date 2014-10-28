@@ -15,6 +15,7 @@ class petSine(OpenMayaMPx.MPxNode):
     # define attrs. This will hold a ref to the MObj that are created in the nodeInitializer
     in_angle = OpenMaya.MObject()
     in_angle_scale = OpenMaya.MObject()
+    in_radius = OpenMaya.MObject()
     out_result = OpenMaya.MObject()
 
     def __init__(self):
@@ -24,29 +25,31 @@ class petSine(OpenMayaMPx.MPxNode):
 
         # only output plugs will be passed to the compute method
         # we could do different computes for different plugs
-        if plug == petBaseClass.out_result:
+        if plug == petSine.out_result:
 
             #--------------------
             # INPUT
             #--------------------
-            # get the datahandle from the data block
-            in_angle_datahandle = data_block.inputValue(petBaseClass.in_angle)
-            in_angle_scale_datahandle = data_block.inputValue(petBaseClass.in_angle_scale)
-
-            # get the data (float in this case) from the data handle
+            # get the datahandle from the data block, and the value from the handle
+            in_angle_datahandle = data_block.inputValue(petSine.in_angle)
             in_angle_value = in_angle_datahandle.asFloat()
+
+            in_angle_scale_datahandle = data_block.inputValue(petSine.in_angle_scale)
             in_angle_scale_value = in_angle_scale_datahandle.asFloat()
+
+            in_radius_datahandle = data_block.inputValue(petSine.in_radius)
+            in_radius_value = in_radius_datahandle.asFloat()
 
             #--------------------
             # COMPUTE
             #--------------------
-            out_result_value = in_angle_value * in_angle_scale_value
+            out_result_value = math.sin(in_angle_value*in_angle_scale_value)*in_radius_value
 
             #--------------------
             # OUTPUT
             #--------------------
             # get the datahandle from the data block
-            out_result_datahandle = data_block.outputValue(petBaseClass.out_result)
+            out_result_datahandle = data_block.outputValue(petSine.out_result)
             out_result_datahandle.setFloat(out_result_value)
 
             # mark the plug clean
@@ -72,7 +75,7 @@ def nodeInitializer():
     # INPUT
     #--------------------
     # create an attr. params: longname, shortname, datatype, default
-    petBaseClass.in_angle = mfn_attr.create('angle', 'a', kFloat, 0.0)
+    petSine.in_angle = mfn_attr.create('angle', 'a', kFloat, 0.0)
     # set the properties of the attr
     mfn_attr.setReadable(1)
     mfn_attr.setWritable(1)
@@ -80,7 +83,15 @@ def nodeInitializer():
     mfn_attr.setKeyable(1)
 
     # create an attr. params: longname, shortname, datatype, default
-    petBaseClass.in_angle_scale = mfn_attr.create('angleScale', 'as', kFloat, 0.0)
+    petSine.in_angle_scale = mfn_attr.create('angleScale', 'as', kFloat, 1.0)
+    # set the properties of the attr
+    mfn_attr.setReadable(1)
+    mfn_attr.setWritable(1)
+    mfn_attr.setStorable(1)
+    mfn_attr.setKeyable(1)
+
+    # create an attr. params: longname, shortname, datatype, default
+    petSine.in_radius= mfn_attr.create('radius', 'r', kFloat, 1.0)
     # set the properties of the attr
     mfn_attr.setReadable(1)
     mfn_attr.setWritable(1)
@@ -93,7 +104,7 @@ def nodeInitializer():
     #--------------------
     # create an attr. params: longname, shortname, datatype, default
     # NOTE that output value has no default value (it will be computed)
-    petBaseClass.out_result = mfn_attr.create('result', 'r', kFloat)
+    petSine.out_result = mfn_attr.create('result', 're', kFloat)
     # set the properties of the attr
     # NOTE only readable
     mfn_attr.setReadable(1)
@@ -105,16 +116,18 @@ def nodeInitializer():
     #--------------------
     # ADD ATTR TO NODE
     #--------------------
-    petBaseClass.addAttribute(petBaseClass.in_angle)
-    petBaseClass.addAttribute(petBaseClass.in_angle_scale)
-    petBaseClass.addAttribute(petBaseClass.out_result)
+    petSine.addAttribute(petSine.in_angle)
+    petSine.addAttribute(petSine.in_angle_scale)
+    petSine.addAttribute(petSine.in_radius)
+    petSine.addAttribute(petSine.out_result)
 
     #--------------------
     # SETUP DEPENDENCY
     #--------------------
     # which attributes needs to be updated if an attribute is changed
-    petBaseClass.attributeAffects(petBaseClass.in_angle, petBaseClass.out_result)
-    petBaseClass.attributeAffects(petBaseClass.in_angle_scale, petBaseClass.out_result)
+    petSine.attributeAffects(petSine.in_angle, petSine.out_result)
+    petSine.attributeAffects(petSine.in_angle_scale, petSine.out_result)
+    petSine.attributeAffects(petSine.in_radius, petSine.out_result)
 
 def initializePlugin(mobject):
     mplugin = OpenMayaMPx.MFnPlugin(mobject)
