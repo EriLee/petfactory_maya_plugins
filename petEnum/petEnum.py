@@ -71,7 +71,7 @@ def nodeInitializer():
     # INPUT
     #--------------------
     # create an attr. params: longname, shortname, datatype, default
-    petEnum.in_enum = enumAttr.create("enum", "e", 0)
+    petEnum.in_enum = mfn_enum_attr.create("enum", "e", 0)
     # set the properties of the attr
     mfn_enum_attr.addField("enum1", 0)
     mfn_enum_attr.addField("enum2", 1)
