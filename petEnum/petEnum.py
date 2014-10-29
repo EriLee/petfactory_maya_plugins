@@ -8,13 +8,13 @@ node_classify = 'utility/general'
 
 # A unique ID associated to this node type.
 # Plugs for internal use only can use 0 - 0x7ffff.
-node_id = OpenMaya.MTypeId(0x0)
+node_id = OpenMaya.MTypeId(0x00003)
 
 class petEnum(OpenMayaMPx.MPxNode):
 
     # define attrs. This will hold a ref to the MObj that are created in the nodeInitializer
-    in_input = OpenMaya.MObject()
-    out_output = OpenMaya.MObject()
+    in_enum = OpenMaya.MObject()
+    out_result = OpenMaya.MObject()
 
     def __init__(self):
         OpenMayaMPx.MPxNode.__init__(self)
@@ -23,27 +23,27 @@ class petEnum(OpenMayaMPx.MPxNode):
 
         # only output plugs will be passed to the compute method
         # we could do different computes for different plugs
-        if plug == petEnum.out_output:
+        if plug == petEnum.out_result:
 
             #--------------------
             # INPUT
             #--------------------
             # get the datahandle from the data block
-            input_data_handle = data_block.inputValue(petEnum.in_input)
+            enum_data_handle = data_block.inputValue(petEnum.in_enum)
 
             # get the data (float in this case) from the data handle
-            input_val = input_data_handle.asFloat()
+            enum_val = enum_data_handle.asShort()
 
             #--------------------
             # COMPUTE
             #--------------------
-            out_value = input_val * .5
+            out_value = enum_val * 10
 
             #--------------------
             # OUTPUT
             #--------------------
             # get the datahandle from the data block
-            output_data_handle = data_block.outputValue(petEnum.out_output)
+            output_data_handle = data_block.outputValue(petEnum.out_result)
             output_data_handle.setFloat(out_value)
 
             # mark the plug clean
@@ -62,6 +62,8 @@ def nodeCreator():
 def nodeInitializer():
     # create a function set for numeric attributes, will be used as a
     # factory to create attributes, they will be returned as MObj
+    mfn_enum_attr = OpenMaya.MFnEnumAttribute()
+
     mfn_attr = OpenMaya.MFnNumericAttribute()
     kFloat = OpenMaya.MFnNumericData.kFloat
 
@@ -69,19 +71,23 @@ def nodeInitializer():
     # INPUT
     #--------------------
     # create an attr. params: longname, shortname, datatype, default
-    petEnum.in_input = mfn_attr.create('input', 'i', kFloat, 0.0)
+    petEnum.in_enum = enumAttr.create("enum", "e", 0)
     # set the properties of the attr
-    mfn_attr.setReadable(1)
-    mfn_attr.setWritable(1)
-    mfn_attr.setStorable(1)
-    mfn_attr.setKeyable(1)
+    mfn_enum_attr.addField("enum1", 0)
+    mfn_enum_attr.addField("enum2", 1)
+    mfn_enum_attr.addField("enum3", 2)
+    #mfn_enum_attr.setHidden(0)
+    mfn_enum_attr.setReadable(1)
+    mfn_enum_attr.setWritable(1)
+    mfn_enum_attr.setStorable(1)
+    mfn_enum_attr.setKeyable(1)
 
     #--------------------
     # OUTPUT
     #--------------------
     # create an attr. params: longname, shortname, datatype, default
     # NOTE that output value has no default value (it will be computed)
-    petEnum.out_output = mfn_attr.create('output', 'o', kFloat)
+    petEnum.out_result = mfn_attr.create('result', 'r', kFloat)
     # set the properties of the attr
     # NOTE only readable
     mfn_attr.setReadable(1)
@@ -93,14 +99,14 @@ def nodeInitializer():
     #--------------------
     # ADD ATTR TO NODE
     #--------------------
-    petEnum.addAttribute(petEnum.in_input)
-    petEnum.addAttribute(petEnum.out_output)
+    petEnum.addAttribute(petEnum.in_enum)
+    petEnum.addAttribute(petEnum.out_result)
 
     #--------------------
     # SETUP DEPENDENCY
     #--------------------
     # which attributes needs to be updated if an attribute is changed
-    petEnum.attributeAffects(petEnum.in_input, petEnum.out_output)
+    petEnum.attributeAffects(petEnum.in_enum, petEnum.out_result)
 
 def initializePlugin(mobject):
     mplugin = OpenMayaMPx.MFnPlugin(mobject)
