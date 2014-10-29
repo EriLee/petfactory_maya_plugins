@@ -14,6 +14,7 @@ class petSine(OpenMayaMPx.MPxNode):
 
     # define attrs. This will hold a ref to the MObj that are created in the nodeInitializer
     in_angle = OpenMaya.MObject()
+    in_angle_offset = OpenMaya.MObject()
     in_angle_scale = OpenMaya.MObject()
     in_radius = OpenMaya.MObject()
     out_result = OpenMaya.MObject()
@@ -34,6 +35,9 @@ class petSine(OpenMayaMPx.MPxNode):
             in_angle_datahandle = data_block.inputValue(petSine.in_angle)
             in_angle_value = in_angle_datahandle.asFloat()
 
+            in_angle_offset_datahandle = data_block.inputValue(petSine.in_angle_offset)
+            in_angle_offset_value = in_angle_offset_datahandle.asFloat()
+
             in_angle_scale_datahandle = data_block.inputValue(petSine.in_angle_scale)
             in_angle_scale_value = in_angle_scale_datahandle.asFloat()
 
@@ -43,7 +47,7 @@ class petSine(OpenMayaMPx.MPxNode):
             #--------------------
             # COMPUTE
             #--------------------
-            out_result_value = math.sin(in_angle_value*in_angle_scale_value)*in_radius_value
+            out_result_value = math.sin((in_angle_value+in_angle_offset_value)*in_angle_scale_value)*in_radius_value
 
             #--------------------
             # OUTPUT
@@ -76,6 +80,14 @@ def nodeInitializer():
     #--------------------
     # create an attr. params: longname, shortname, datatype, default
     petSine.in_angle = mfn_attr.create('angle', 'a', kFloat, 0.0)
+    # set the properties of the attr
+    mfn_attr.setReadable(1)
+    mfn_attr.setWritable(1)
+    mfn_attr.setStorable(1)
+    mfn_attr.setKeyable(1)
+
+    # create an attr. params: longname, shortname, datatype, default
+    petSine.in_angle_offset = mfn_attr.create('angleOffset', 'ao', kFloat, 1.0)
     # set the properties of the attr
     mfn_attr.setReadable(1)
     mfn_attr.setWritable(1)
@@ -117,6 +129,7 @@ def nodeInitializer():
     # ADD ATTR TO NODE
     #--------------------
     petSine.addAttribute(petSine.in_angle)
+    petSine.addAttribute(petSine.in_angle_offset)
     petSine.addAttribute(petSine.in_angle_scale)
     petSine.addAttribute(petSine.in_radius)
     petSine.addAttribute(petSine.out_result)
@@ -126,6 +139,7 @@ def nodeInitializer():
     #--------------------
     # which attributes needs to be updated if an attribute is changed
     petSine.attributeAffects(petSine.in_angle, petSine.out_result)
+    petSine.attributeAffects(petSine.in_angle_offset, petSine.out_result)
     petSine.attributeAffects(petSine.in_angle_scale, petSine.out_result)
     petSine.attributeAffects(petSine.in_radius, petSine.out_result)
 
