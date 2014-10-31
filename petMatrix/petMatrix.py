@@ -1,4 +1,4 @@
-import sys, math    
+#import sys, math    
 from maya import OpenMaya, OpenMayaMPx
 
 # The name of the node.
@@ -32,7 +32,7 @@ class petMatrix(OpenMayaMPx.MPxNode):
             in_matrix_datahandle = data_block.inputValue(petMatrix.in_matrix)
 
             # get the data (float in this case) from the data handle
-            in_matrix_value = in_matrix_datahandle.asFloat()
+            in_matrix_value = in_matrix_datahandle.asMatrix()
 
             #--------------------
             # COMPUTE
@@ -43,8 +43,8 @@ class petMatrix(OpenMayaMPx.MPxNode):
             # OUTPUT
             #--------------------
             # get the datahandle from the data block
-            output_data_handle = data_block.outputValue(petMatrix.out_output)
-            output_data_handle.setFloat(out_value)
+            out_matrix_datahandle = data_block.outputValue(petMatrix.out_matrix)
+            out_matrix_datahandle.setMMatrix(out_matrix_value)
 
             # mark the plug clean
             data_block.setClean(plug)
@@ -62,45 +62,45 @@ def nodeCreator():
 def nodeInitializer():
     # create a function set for numeric attributes, will be used as a
     # factory to create attributes, they will be returned as MObj
-    mfn_attr = OpenMaya.MFnNumericAttribute()
-    kFloat = OpenMaya.MFnNumericData.kFloat
+    mfn_attr = OpenMaya.MFnMatrixAttribute()
 
     #--------------------
     # INPUT
     #--------------------
     # create an attr. params: longname, shortname, datatype, default
-    petMatrix.in_input = mfn_attr.create('input', 'i', kFloat, 0.0)
+    # the default is a double matrix, if we want to save memory we could specify a float matrix instead
+    petMatrix.in_matrix = mfn_attr.create('in_matrix', 'im')
     # set the properties of the attr
-    mfn_attr.setReadable(1)
-    mfn_attr.setWritable(1)
-    mfn_attr.setStorable(1)
-    mfn_attr.setKeyable(1)
+    mfn_attr.setReadable(True)
+    mfn_attr.setWritable(True)
+    mfn_attr.setStorable(True)
+    mfn_attr.setKeyable(True)
 
     #--------------------
     # OUTPUT
     #--------------------
     # create an attr. params: longname, shortname, datatype, default
     # NOTE that output value has no default value (it will be computed)
-    petMatrix.out_output = mfn_attr.create('output', 'o', kFloat)
+    petMatrix.out_matrix = mfn_attr.create('out_matrix', 'om')
     # set the properties of the attr
     # NOTE only readable
-    mfn_attr.setReadable(1)
-    mfn_attr.setWritable(0)
-    mfn_attr.setStorable(0)
-    mfn_attr.setKeyable(0)
+    mfn_attr.setReadable(True)
+    mfn_attr.setWritable(False)
+    mfn_attr.setStorable(False)
+    mfn_attr.setKeyable(False)
 
 
     #--------------------
     # ADD ATTR TO NODE
     #--------------------
-    petMatrix.addAttribute(petMatrix.in_input)
-    petMatrix.addAttribute(petMatrix.out_output)
+    petMatrix.addAttribute(petMatrix.in_matrix)
+    petMatrix.addAttribute(petMatrix.out_matrix)
 
     #--------------------
     # SETUP DEPENDENCY
     #--------------------
     # which attributes needs to be updated if an attribute is changed
-    petMatrix.attributeAffects(petMatrix.in_input, petMatrix.out_output)
+    petMatrix.attributeAffects(petMatrix.in_matrix, petMatrix.out_matrix)
 
 def initializePlugin(mobject):
     mplugin = OpenMayaMPx.MFnPlugin(mobject)
