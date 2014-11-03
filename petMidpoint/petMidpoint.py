@@ -41,13 +41,15 @@ class petMidpoint(OpenMayaMPx.MPxNode):
             #--------------------
             # COMPUTE
             #--------------------
-            #out_midpoint_V = 
-
+            '''
             tm_1 = OpenMaya.MTransformationMatrix(in_matrix_1_V)
             t_1 = tm_1.translation(OpenMaya.MSpace.kWorld)
 
             tm_2 = OpenMaya.MTransformationMatrix(in_matrix_2_V)
             t_2 = tm_2.translation(OpenMaya.MSpace.kWorld)
+            '''
+            t_1 = OpenMaya.MVector(in_matrix_1_V(3,0), in_matrix_1_V(3,1), in_matrix_1_V(3,2))
+            t_2 = OpenMaya.MVector(in_matrix_2_V(3,0), in_matrix_2_V(3,1), in_matrix_2_V(3,2))
 
             mid_t = t_1 + (t_2 - t_1)*.5
 
