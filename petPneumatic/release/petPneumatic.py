@@ -17,7 +17,8 @@ class petPneumatic(OpenMayaMPx.MPxNode):
     in_matrix_2 = OpenMaya.MObject()
 
     # output
-    out_midpoint = OpenMaya.MObject()
+    out_top_pos = OpenMaya.MObject()
+    out_btm_pos = OpenMaya.MObject()
 
     def __init__(self):
         OpenMayaMPx.MPxNode.__init__(self)
@@ -26,7 +27,7 @@ class petPneumatic(OpenMayaMPx.MPxNode):
 
         # only output plugs will be passed to the compute method
         # we could do different computes for different plugs
-        if plug == petPneumatic.out_midpoint:
+        if plug == petPneumatic.out_top_pos or plug == petPneumatic.out_btm_pos:
 
             #--------------------
             # INPUT
@@ -44,7 +45,7 @@ class petPneumatic(OpenMayaMPx.MPxNode):
 
             t_1 = OpenMaya.MVector(in_matrix_1_V(3,0), in_matrix_1_V(3,1), in_matrix_1_V(3,2))
             t_2 = OpenMaya.MVector(in_matrix_2_V(3,0), in_matrix_2_V(3,1), in_matrix_2_V(3,2))
-
+            '''
             aim_v = t_2 - t_1
             mid_t = aim_v*.5 + t_1
 
@@ -55,18 +56,23 @@ class petPneumatic(OpenMayaMPx.MPxNode):
             up_ortho_vn = cross_vn ^ aim_vn
 
             #tm = OpenMaya.MTransformationMatrix([[aim_vn[0], aim_vn[1], aim_vn[2], 0], [cross_vn[0],cross_vn[1],cross_vn[2],0], [up_ortho_vn[0],up_ortho_vn[1],up_ortho_vn[2],0], [mid_t[0], mid_t[1], mid_t[2], 1]])
-            tm = OpenMaya.MMatrix([[aim_vn[0], aim_vn[1], aim_vn[2], 0], [cross_vn[0],cross_vn[1],cross_vn[2],0], [up_ortho_vn[0],up_ortho_vn[1],up_ortho_vn[2],0], [mid_t[0], mid_t[1], mid_t[2], 1]])
+            m = OpenMaya.MMatrix()
+            m_list = [aim_vn[0], aim_vn[1], aim_vn[2], 0, cross_vn[0],cross_vn[1],cross_vn[2],0, up_ortho_vn[0],up_ortho_vn[1],up_ortho_vn[2],0, mid_t[0], mid_t[1], mid_t[2], 1]
+            OpenMaya.MScriptUtil.createMatrixFromList(m_list, m)
+            tm = OpenMaya.MTransformationMatrix(m)
+            '''
+            
             '''
             rot_xyz = tm.rotation()
 
             rx = (180/math.pi)*rot_xyz[0]
             ry = (180/math.pi)*rot_xyz[1]
             rz = (180/math.pi)*rot_xyz[2]
-            '''
+            
             out_x = mid_t.x
             out_y = mid_t.y
             out_z = mid_t.z
-            
+            '''
             #out_x = rx
             #out_y = ry
             #out_z = rz
@@ -75,8 +81,11 @@ class petPneumatic(OpenMayaMPx.MPxNode):
             # OUTPUT
             #--------------------
             # get the datahandle from the data block
-            out_midpoint_DH = data_block.outputValue(petPneumatic.out_midpoint)
-            out_midpoint_DH.set3Float(out_x, out_y, out_z)
+            out_top_pos_DH = data_block.outputValue(petPneumatic.out_top_pos)
+            out_top_pos_DH.set3Float(t_1.x, t_1.y, t_1.z)
+
+            out_btm_pos_DH = data_block.outputValue(petPneumatic.out_btm_pos)
+            out_btm_pos_DH.set3Float(t_2.x, t_2.y, t_2.z)
 
             # mark the plug clean
             data_block.setClean(plug)
@@ -124,7 +133,7 @@ def nodeInitializer():
     #--------------------
     # create an attr. params: longname, shortname, datatype, default
     # NOTE that output value has no default value (it will be computed)
-    petPneumatic.out_midpoint = num_attr.create('outMidpoint', 'om', k3_float)
+    petPneumatic.out_top_pos = num_attr.create('topPos', 'tp', k3_float)
 
     # set the properties of the attr
     # NOTE only readable
@@ -133,19 +142,32 @@ def nodeInitializer():
     num_attr.setStorable(False)
     num_attr.setKeyable(False)
 
+    petPneumatic.out_btm_pos = num_attr.create('btmPos', 'bp', k3_float)
+
+    # set the properties of the attr
+    # NOTE only readable
+    num_attr.setReadable(True)
+    num_attr.setWritable(False)
+    num_attr.setStorable(False)
+    num_attr.setKeyable(False)
+
+
     #--------------------
     # ADD ATTR TO NODE
     #--------------------
     petPneumatic.addAttribute(petPneumatic.in_matrix_1)
     petPneumatic.addAttribute(petPneumatic.in_matrix_2)
-    petPneumatic.addAttribute(petPneumatic.out_midpoint)
+    petPneumatic.addAttribute(petPneumatic.out_top_pos)
+    petPneumatic.addAttribute(petPneumatic.out_btm_pos)
 
     #--------------------
     # SETUP DEPENDENCY
     #--------------------
     # which attributes needs to be updated if an attribute is changed
-    petPneumatic.attributeAffects(petPneumatic.in_matrix_1, petPneumatic.out_midpoint)
-    petPneumatic.attributeAffects(petPneumatic.in_matrix_2, petPneumatic.out_midpoint)
+    petPneumatic.attributeAffects(petPneumatic.in_matrix_1, petPneumatic.out_top_pos)
+    petPneumatic.attributeAffects(petPneumatic.in_matrix_2, petPneumatic.out_top_pos)
+    petPneumatic.attributeAffects(petPneumatic.in_matrix_1, petPneumatic.out_btm_pos)
+    petPneumatic.attributeAffects(petPneumatic.in_matrix_2, petPneumatic.out_btm_pos)
 
 def initializePlugin(mobject):
     mplugin = OpenMayaMPx.MFnPlugin(mobject)
